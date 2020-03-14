@@ -15,6 +15,8 @@ import InputLabel from '@material-ui/core/InputLabel';
 import InputAdornment from '@material-ui/core/InputAdornment';
 import SearchRounded from '@material-ui/icons/SearchRounded';
 import FormControl from '@material-ui/core/FormControl';
+import Fade from '@material-ui/core/Fade';
+import LinearProgress from '@material-ui/core/LinearProgress';
 
 const styles = theme => ({
     root: {
@@ -44,12 +46,19 @@ const styles = theme => ({
         width: '30vw',
         minWidth: 200
       },
+    loading: {
+        width: '100%'
+      },
+    loadingContainer: {
+        height: '1px'
+    }
 });
 
 class Page1 extends React.Component{
     constructor(props){
         super(props);
         this.state = {
+            loading: false,
             sort: 'LastName',
             dir: 'asc',
             page: 0,
@@ -67,6 +76,7 @@ class Page1 extends React.Component{
     }
 
     refreshGrid(){
+        this.handleLoading(true);
         fetch('https://react-api.azurewebsites.net/api/users' 
             + '?page=' + (this.state.page + 1)
             + '&rows=' + this.state.rows
@@ -81,7 +91,13 @@ class Page1 extends React.Component{
         .then(data => {
             this.setState({
                 data: data
-            });
+            }, () => this.handleLoading(false));
+        });
+    }
+
+    handleLoading(value){
+        this.setState({
+            loading: value
         });
     }
 
@@ -136,6 +152,12 @@ class Page1 extends React.Component{
 
         return(
             <Paper className={classes.paper}>
+                <div className={classes.loadingContainer}>
+                    <Fade in={state.loading} className={classes.loading} style={{
+                        transitionDelay: state.loading ? '800ms' : '0ms'}} unmountOnExit>                        
+                        <LinearProgress/>
+                    </Fade>
+                </div>    
                 <Toolbar>
                     <FormControl className={classes.search}>                        
                         <InputLabel htmlFor="input-search">Search</InputLabel>
