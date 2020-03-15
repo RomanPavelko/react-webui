@@ -125,7 +125,8 @@ class Page1 extends React.Component{
 
     handleSearch(event){
         this.setState({
-            [event.target.name]: event.target.value
+            [event.target.name]: event.target.value,
+            page: 0
         }, () => this.refreshGrid());
     }
    
