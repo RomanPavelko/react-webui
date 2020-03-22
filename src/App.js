@@ -5,6 +5,9 @@ import Page2 from './Page2'
 import Page3 from './Page3'
 import Page4 from './Page4'
 import Page5 from './Page5'
+import Progressbar from './js/components/progressbar'
+import SnackbarSuccess from './js/components/snackbarSuccess'
+import SnackbarError from './js/components/snackbarError'
 // import logo from './logo.svg';
 import './App.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
@@ -20,10 +23,9 @@ class App extends React.Component {
   render(){
     return (
       <div className="App">
-        {/* <header className="App-header">
-          <div>React Sandbox</div>
-        </header> */}
-
+        <SnackbarSuccess />
+        <SnackbarError />
+        <Progressbar />
 
         <div className="App-body">
           <div className="App-menu">
@@ -35,11 +37,7 @@ class App extends React.Component {
             { this.renderPage() }
           </div>
         </div>
-
-
-        {/* <footer className="App-footer">
-          <div>footer</div>
-        </footer> */}
+        
       </div>
     );
   }

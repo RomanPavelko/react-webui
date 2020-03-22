@@ -1,4 +1,5 @@
 import React from 'react';
+import fetchFromApi from './js/helpers/fetch';
 import { withStyles } from '@material-ui/core/styles';
 import Table from '@material-ui/core/Table';
 import TableBody from '@material-ui/core/TableBody';
@@ -15,8 +16,30 @@ import InputLabel from '@material-ui/core/InputLabel';
 import InputAdornment from '@material-ui/core/InputAdornment';
 import SearchRounded from '@material-ui/icons/SearchRounded';
 import FormControl from '@material-ui/core/FormControl';
-import Fade from '@material-ui/core/Fade';
-import LinearProgress from '@material-ui/core/LinearProgress';
+import IconButton from '@material-ui/core/IconButton';
+import DeleteForeverOutlinedIcon from '@material-ui/icons/DeleteForeverOutlined';
+import EditOutlinedIcon from '@material-ui/icons/EditOutlined';
+import Dialog from '@material-ui/core/Dialog';
+import DialogActions from '@material-ui/core/DialogActions';
+import DialogContent from '@material-ui/core/DialogContent';
+import DialogTitle from '@material-ui/core/DialogTitle';
+import { TextField, Button } from '@material-ui/core';
+import AddIcon from '@material-ui/icons/Add';
+import Slide from '@material-ui/core/Slide';
+import { connect } from "react-redux";
+import { showSnackbarSuccess, showSnackbarError, progressbarShow, progressbarClear } from "./js/actions/index";
+
+const Transition = React.forwardRef(function Transition(props, ref) {
+    return <Slide direction="down" ref={ref} {...props} />;
+});
+function mapDispatchToProps(dispatch) {
+    return {
+        showSnackbarSuccess: message => dispatch(showSnackbarSuccess({message})),
+        showSnackbarError: message => dispatch(showSnackbarError({message})),
+        progressbarShow: () => dispatch(progressbarShow()),
+        progressbarClear: () => dispatch(progressbarClear())
+    };
+}
 
 const styles = theme => ({
     root: {
@@ -44,30 +67,40 @@ const styles = theme => ({
         marginTop: theme.spacing(3),
         marginBottom: theme.spacing(1),
         width: '30vw',
-        minWidth: 200
+        minWidth: 150
       },
-    loading: {
-        width: '100%'
-      },
-    loadingContainer: {
-        height: '1px'
+    addIcon: {
+        position: "absolute",
+        right: 14,
+        top: 20
     }
 });
 
-class Page1 extends React.Component{
+class ConnectedPage1 extends React.Component{
     constructor(props){
         super(props);
         this.state = {
-            loading: false,
+            apiUrl: 'http://localhost:5000',
             sort: 'LastName',
             dir: 'asc',
             page: 0,
-            rows: 10,
+            rows: 8,
             search: '',
             data: {
                 totalRecords: 0,
                 users: []
-            }            
+            },
+            dialog: {
+                open: false,
+                type: 1, //1 - add. 2 - edit
+                title: 'Add Record',
+                id: 0, firstName: '', lastName: '', address: '', city: '', zip: '', phone: '', email: '',
+                validation: { firstName: '', lastName: '', address: '', city: '', zip: '', phone: '', email: ''}
+            },
+            deleteDialog: {
+                open: false,
+                id: 0
+            }
         }
     }
     
@@ -75,30 +108,30 @@ class Page1 extends React.Component{
         this.refreshGrid();
     }
 
-    refreshGrid(){
-        this.handleLoading(true);
-        fetch('https://react-api.azurewebsites.net/api/users' 
-            + '?page=' + (this.state.page + 1)
+    refreshGrid(){        
+        fetchFromApi({url: (this.state.apiUrl 
+            + '/api/users'
+            + '?page='
+            + (this.state.page + 1)
             + '&rows=' + this.state.rows
             + '&sort=' + this.state.sort
             + '&dir=' + this.state.dir
-            + '&search=' + this.state.search, {
-            method: 'GET'
-        })
-        .then(results => {
-            return results.json();
-        })
-        .then(data => {
+            + '&search=' + this.state.search)
+            , method: 'GET'})
+        .then(rData => {
             this.setState({
-                data: data
-            }, () => this.handleLoading(false));
+                data : rData
+            });
         });
     }
 
     handleLoading(value){
-        this.setState({
-            loading: value
-        });
+        if(value){
+            this.props.progressbarShow();
+        }
+        else{
+            this.props.progressbarClear();
+        }
     }
 
     handleSort(id){
@@ -136,12 +169,81 @@ class Page1 extends React.Component{
             page: 0
         }, () => this.refreshGrid());
     }
+
+    handleDialog(show, type, row){
+        let dialog = this.state.dialog;
+        dialog.open = show;
+
+        dialog.type = type ?? 1;
+        dialog.title = (dialog.type === 1 ? 'Add' : 'Edit') + ' Record';
+
+        dialog.id = row?.id ?? 0;
+        dialog.firstName = row?.firstName ?? '';
+        dialog.lastName = row?.lastName ?? '';
+        dialog.address = row?.address ?? '';
+        dialog.city = row?.city ?? '';
+        dialog.zip = row?.zip ?? '';
+        dialog.phone = row?.phone ?? '';
+        dialog.email = row?.email ?? '';
+        dialog.validation = { firstName: '', lastName: '', address: '', city: '', zip: '', phone: '', email: ''};
+
+        this.setState({
+            dialog: dialog
+        });
+    }
+
+    handleDeleteDialog(show, id){
+        let deleteDialog = this.state.deleteDialog;
+        deleteDialog.open = show;
+        deleteDialog.id = id ?? 0;
+
+        this.setState({
+            deleteDialog: deleteDialog
+        });
+    }
+
+    handleDialogChange(event){
+        let dialog = this.state.dialog; 
+        dialog[event.target.name] = event.target.value; 
+        this.setState( { dialog: dialog });
+    }
+
+    handleSave(){
+        const { dialog } = this.state;
+        
+        fetchFromApi({ url: this.state.apiUrl + '/api/user', method: dialog.type === 1 ? 'POST' : 'PUT', data: dialog })
+            .then(rData => {
+                if(rData){
+                    let dialog = this.state.dialog;
+                    dialog.validation = rData;
+                    this.setState( { dialog: dialog });
+                    this.props.showSnackbarError('Save Failed!');
+                }
+                else{
+                    this.refreshGrid();
+                    this.props.showSnackbarSuccess('Saved!');
+                    this.handleDialog(false);
+                }
+            });
+    }
+
+    handleDelete(){
+
+        fetchFromApi({ url: this.state.apiUrl + '/api/user?id=' + this.state.deleteDialog.id, method: 'DELETE' })
+            .then(data => {
+                this.refreshGrid();
+                this.props.showSnackbarSuccess('Deleted!');
+        });
+
+        this.handleDeleteDialog(false);
+    }
               
     render(){
         const state = this.state;
         const { classes } = this.props;
 
         const headCells = [
+            { id: 'Actions', label: '', align: 'left' },
             { id: 'FirstName', label: 'First Name', align: 'left' },
             { id: 'LastName', label: 'Last Name', align: 'left' },
             { id: 'Address', label: 'Address', align: 'right' },
@@ -153,12 +255,6 @@ class Page1 extends React.Component{
 
         return(
             <Paper className={classes.paper}>
-                <div className={classes.loadingContainer}>
-                    <Fade in={state.loading} className={classes.loading} style={{
-                        transitionDelay: state.loading ? '800ms' : '0ms'}} unmountOnExit>                        
-                        <LinearProgress/>
-                    </Fade>
-                </div>    
                 <Toolbar>
                     <FormControl className={classes.search}>                        
                         <InputLabel htmlFor="input-search">Search</InputLabel>
@@ -168,6 +264,12 @@ class Page1 extends React.Component{
                             </InputAdornment>
                         } />
                     </FormControl>
+                    <div className={classes.addIcon}>
+                        <IconButton  onClick={() => this.handleDialog(true, 1)} aria-label="add">
+                            <AddIcon fontSize="large" />
+                        </IconButton>
+                    </div>
+                        
                 </Toolbar>
                 <TableContainer>
                 <Table className={classes.table} aria-label="simple table">
@@ -202,6 +304,14 @@ class Page1 extends React.Component{
                     <TableBody>
                         {state.data.users.map(row => (
                             <TableRow key={row.id} hover>
+                            <TableCell>
+                                <IconButton onClick={() => this.handleDialog(true, 2, row)} aria-label="edit">
+                                    <EditOutlinedIcon />
+                                </IconButton>
+                                <IconButton onClick={() => this.handleDeleteDialog(true, row.id)} aria-label="delete" >
+                                    <DeleteForeverOutlinedIcon />
+                                </IconButton>
+                            </TableCell>    
                             <TableCell>{row.firstName}</TableCell>
                             <TableCell>{row.lastName}</TableCell>
                             <TableCell align="right">{row.address}</TableCell>
@@ -215,7 +325,7 @@ class Page1 extends React.Component{
                 </Table>
                 </TableContainer>
                 <TablePagination
-                    rowsPerPageOptions={[2, 5, 10, 25, 50, 100]}
+                    rowsPerPageOptions={[3, 8, 12, 25, 50, 100]}
                     component="div"
                     count={state.data.totalRecords}
                     rowsPerPage={state.rows}
@@ -223,9 +333,46 @@ class Page1 extends React.Component{
                     onChangePage={(event, newPage) => this.handleChangePage(event, newPage)}
                     onChangeRowsPerPage={(event) => this.handleChangeRowsPerPage(event)}
                 />
+                <Dialog keepMounted open={state.dialog.open} onClose={() => this.handleDialog(false)} aria-labelledby="form-dialog-title">
+                    <DialogTitle id="form-dialog-title">
+                        {state.dialog.title}
+                    </DialogTitle>
+                    <DialogContent>
+                        <TextField label="First Name" name="firstName" margin="dense" value={state.dialog.firstName} onChange={(e) => { this.handleDialogChange(e) }} fullWidth autoFocus error={(state.dialog.validation.firstName ?? '') !== ''} helperText={state.dialog.validation.firstName} />
+                        <TextField label="Last Name" name="lastName" margin="dense" value={state.dialog.lastName} onChange={(e) => { this.handleDialogChange(e) }} fullWidth error={(state.dialog.validation.lastName ?? '') !== ''} helperText={state.dialog.validation.lastName} />
+                        <TextField label="Address" name="address" margin="dense" value={state.dialog.address} onChange={(e) => { this.handleDialogChange(e) }} fullWidth error={(state.dialog.validation.address ?? '') !== ''} helperText={state.dialog.validation.address} />
+                        <TextField label="City" name="city" margin="dense" value={state.dialog.city} onChange={(e) => { this.handleDialogChange(e) }} fullWidth error={(state.dialog.validation.city ?? '') !== ''} helperText={state.dialog.validation.city} />
+                        <TextField label="Zip" name="zip" margin="dense" value={state.dialog.zip} onChange={(e) => { this.handleDialogChange(e) }} fullWidth error={(state.dialog.validation.zip ?? '') !== ''} helperText={state.dialog.validation.zip} />
+                        <TextField label="Phone" name="phone" margin="dense" value={state.dialog.phone} onChange={(e) => { this.handleDialogChange(e) }} fullWidth error={(state.dialog.validation.phone ?? '') !== ''} helperText={state.dialog.validation.phone} />
+                        <TextField label="Email" name="email" margin="dense" value={state.dialog.email} onChange={(e) => { this.handleDialogChange(e) }} fullWidth error={(state.dialog.validation.email ?? '') !== ''} helperText={state.dialog.validation.email} />                            
+                    </DialogContent>
+                    <DialogActions>
+                        <Button onClick={() => this.handleDialog(false)} color="primary">
+                            Cancel
+                        </Button>
+                        <Button onClick={() => this.handleSave()} color="primary">
+                            Save
+                        </Button>
+                    </DialogActions>
+                </Dialog>
+                <Dialog open={state.deleteDialog.open} TransitionComponent={Transition} onClose={() => this.handleDeleteDialog(false)} aria-labelledby="form-dialog-title">
+                    <DialogTitle>
+                        Are you sure want to delete this user?
+                     </DialogTitle>
+                    <DialogActions>
+                        <Button onClick={() => this.handleDeleteDialog(false)} color="primary">
+                            Cancel
+                        </Button>
+                        <Button onClick={() => this.handleDelete()} color="primary">
+                            Delete
+                        </Button>
+                    </DialogActions>
+                </Dialog>
             </Paper>            
         )
     }
 }
+
+const Page1 = connect(null, mapDispatchToProps)(ConnectedPage1);
 
 export default withStyles(styles, { withTheme: true })(Page1)
