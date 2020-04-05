@@ -28,6 +28,7 @@ import AddIcon from '@material-ui/icons/Add';
 import Slide from '@material-ui/core/Slide';
 import { connect } from "react-redux";
 import { showSnackbarSuccess, showSnackbarError, progressbarShow, progressbarClear } from "./js/actions/index";
+import { API_URL } from './js/constants/urls';
 
 const Transition = React.forwardRef(function Transition(props, ref) {
     return <Slide direction="down" ref={ref} {...props} />;
@@ -80,7 +81,7 @@ class ConnectedPage1 extends React.Component{
     constructor(props){
         super(props);
         this.state = {
-            apiUrl: 'http://localhost:5000',
+            apiUrl: API_URL,
             sort: 'LastName',
             dir: 'asc',
             page: 0,
