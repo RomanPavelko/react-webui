@@ -76,7 +76,7 @@ class SignIn extends React.Component{
             <div>
                 <Dialog open={true}>
                     <DialogTitle>
-                        Sign In (u:test@test.com&nbsp;p:000000)
+                        Sign In (u:test@test.com&nbsp;p:0000)
                     </DialogTitle>
                     <DialogContent>
                         <TextField 
