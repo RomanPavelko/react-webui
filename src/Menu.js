@@ -20,7 +20,7 @@ class Menu extends React.Component{
 
     renderMenuItem(i){
         return <MenuItem 
-            value={i} 
+            value={"Menu Item " + i} 
             getClass={this.props.activePage === i ? 'active' : ''} 
             onClick={() => this.props.setPage(i)} />
     }

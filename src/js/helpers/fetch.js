@@ -10,7 +10,7 @@ export default function fetchFromApi(props)
 
         fetch(url, {
             method: method,
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json', 'token': localStorage.getItem('jwt_token') },
             body: JSON.stringify(data)
         })
         .then(response => {

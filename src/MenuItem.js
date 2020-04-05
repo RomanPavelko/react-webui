@@ -6,7 +6,7 @@ function MenuItem(props){
             id={"menu-item-" + props.value}
             className={"Menu-item " + props.getClass}
             onClick={props.onClick}>
-            Menu Item {props.value}
+            {props.value}
         </div>
     );
 }

@@ -80,7 +80,7 @@ class ConnectedPage1 extends React.Component{
     constructor(props){
         super(props);
         this.state = {
-            apiUrl: 'https://react-api.azurewebsites.net/',
+            apiUrl: 'http://localhost:5000',
             sort: 'LastName',
             dir: 'asc',
             page: 0,

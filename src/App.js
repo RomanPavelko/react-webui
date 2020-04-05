@@ -1,5 +1,6 @@
 import React from 'react';
 import Menu from './Menu'
+import MenuItem from './MenuItem'
 import Page1 from './Page1'
 import Page2 from './Page2'
 import Page3 from './Page3'
@@ -11,6 +12,10 @@ import SnackbarError from './js/components/snackbarError'
 // import logo from './logo.svg';
 import './App.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
+import Auth from './auth';
+import SignIn from './signin';
+
+const auth = new Auth();
 
 class App extends React.Component {
   constructor(props){
@@ -27,16 +32,34 @@ class App extends React.Component {
         <SnackbarError />
         <Progressbar />
 
-        <div className="App-body">
-          <div className="App-menu">
-            <Menu 
-              activePage={this.state.activePage} 
-              setPage={(i) => this.setPage(i)} />
-          </div>
-          <div className="App-content">
-            { this.renderPage() }
-          </div>
-        </div>
+        {auth.isAuthenticated() 
+          ? 
+            <>
+              <div className="App-body">
+                <div className="App-menu">
+                  <Menu 
+                    activePage={this.state.activePage} 
+                    setPage={(i) => this.setPage(i)} 
+                  />
+                  <div className="Menu-item-bottom">
+                    <div className="Menu-item-text">Hello, {auth.userName()}</div>
+                    <MenuItem 
+                      value="Sign Out" 
+                      onClick={() => {auth.signOut(); this.props.history.push('/')}} />  
+                  </div>
+                </div>
+                <div className="App-content">
+                  { this.renderPage() }
+                </div>
+              </div>
+            </> 
+          : 
+            <>
+              <SignIn auth={auth} {...this.props} />
+            </>}
+        
+
+        
         
       </div>
     );

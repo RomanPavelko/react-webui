@@ -17,10 +17,14 @@
 .App-menu .Menu-header a:hover{
   text-decoration: none;
 }
-.App-menu .Menu-item{
+.App-menu .Menu-item, .App-menu .Menu-item-text{
   padding: 10px;
   margin-left: 10px;
   margin-bottom: 10px;
+}
+.App-menu .Menu-item-bottom{
+  position: absolute;
+  bottom: 20px;
 }
 .App-menu .Menu-item.active,.App-menu .Menu-item:hover{
   cursor: pointer;
