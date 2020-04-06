@@ -1,19 +1,23 @@
+import jwt_decode from 'jwt-decode';
 export default class Auth {
-    signIn = (data) => {
-        localStorage.setItem('sign_in', true);
+    signIn = (data) => {    
+        //decode JWT
+        const jwt = jwt_decode(data.jwtToken);
+
+        localStorage.setItem('user_name', jwt.sid);
+        localStorage.setItem('expiration', jwt.exp);
+        localStorage.setItem('first_name', jwt.firstName);
+        localStorage.setItem('last_name', jwt.lastName);
+        
         localStorage.setItem('jwt_token', data.jwtToken);
-        localStorage.setItem('user_name', data.userName);
-        localStorage.setItem('first_name', data.firstName);
-        localStorage.setItem('last_name', data.lastName);
     }
 
     signOut = () => {
-        localStorage.setItem('sign_in', false);
+        localStorage.removeItem('expiration');
     }
 
     isAuthenticated = () => {
-        const signIn = localStorage.getItem('sign_in');
-        return signIn && signIn == 'true';
+        return new Date(localStorage.getItem('expiration') * 1000) >= new Date();
     }
 
     userName = () => {
