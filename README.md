@@ -3,7 +3,7 @@
 Application contains:
 1. Autentication using JWT (credentials are show on login dialog and match those on API side just for simplicity)
 2. Menu
-3. Integration with .Net Core API
+3. Integration with .Net Core API (https://react-api.azurewebsites.net/)
 4. Grid with a standard set of actions:
     - add
     - edit
